@@ -1,0 +1,138 @@
+{
+  "name": "Instituto Mix - Atualiza Etapa e Cria Tarefa",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://api.crm.imlabs.com.br/v1/workspaces/255/opportunities?stage_id=ID_AGUARDANDO_CONTATO",
+        "options": {},
+        "headerAuth": {
+          "name": "Authorization",
+          "value": "Bearer SUA_TOKEN_AQUI"
+        }
+      },
+      "id": "2",
+      "name": "Buscar Oportunidades Aguardando Contato",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "\nreturn items[0].json.data.map(oportunidade => {\n  return {\n    json: {\n      id: oportunidade.id,\n      name: oportunidade.name,\n      user_id: oportunidade.user_id,\n      contact_id: oportunidade.contact_id\n    }\n  }\n});\n"
+      },
+      "id": "3",
+      "name": "Extrair Oportunidades",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "={{`https://api.crm.imlabs.com.br/v1/workspaces/255/opportunities/` + $json.id}}",
+        "method": "PUT",
+        "headerAuth": {
+          "name": "Authorization",
+          "value": "Bearer SUA_TOKEN_AQUI"
+        },
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "\n{\n  \"name\": \"{{ $json.name }}\",\n  \"user_id\": {{ $json.user_id }},\n  \"contact_id\": {{ $json.contact_id }},\n  \"opportunity_type_id\": 2,\n  \"source_type\": \"FormularioSite\",\n  \"media_id\": 20,\n  \"workspace_id\": 255,\n  \"price\": 1,\n  \"probability\": 20,\n  \"products\": [{\"id\": 7, \"quantity\": 1, \"price\": 1}],\n  \"campaign_id\": 69,\n  \"sales_stage_id\": 2\n}\n"
+      },
+      "id": "4",
+      "name": "Mover para Contato Inicial",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://api.crm.imlabs.com.br/v1/workspaces/255/tasks",
+        "method": "POST",
+        "headerAuth": {
+          "name": "Authorization",
+          "value": "Bearer SUA_TOKEN_AQUI"
+        },
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "\n{\n  \"name\": null,\n  \"user_id\": {{ $json.user_id }},\n  \"parent_id\": {{ $json.id }},\n  \"parent_type\": \"Opportunity\",\n  \"task_type_id\": 5,\n  \"interaction_type_id\": 2,\n  \"description\": \"Tentativa de contato inicial\",\n  \"is_registry\": true,\n  \"ended_scheduled\": false,\n  \"start_timestamp\": \"{{ new Date().toISOString().slice(0, 16).replace('T', ' ') }}\"\n}\n"
+      },
+      "id": "5",
+      "name": "Criar Tarefa de Contato Inicial",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Buscar Oportunidades Aguardando Contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Oportunidades Aguardando Contato": {
+      "main": [
+        [
+          {
+            "node": "Extrair Oportunidades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Oportunidades": {
+      "main": [
+        [
+          {
+            "node": "Mover para Contato Inicial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mover para Contato Inicial": {
+      "main": [
+        [
+          {
+            "node": "Criar Tarefa de Contato Inicial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
