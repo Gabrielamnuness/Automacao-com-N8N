@@ -1,4 +1,4 @@
-# Automacao-com-N8N
+# Automação-com-N8N
 ### Criando uma automação com N8N para otimizar meu trabalho
 
 **O CRM é uma ferramenta utilizada na empresa a qual atuo, para gestão de Leads.**   
